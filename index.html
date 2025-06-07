@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniQorn</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- D3.js for data visualization -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #treemap {
+            width: 100%;
+            height: 80vh;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            position: relative;
+        }
+        .node {
+            box-sizing: border-box;
+            overflow: hidden;
+            position: absolute;
+            border: 1px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        .node:hover {
+            filter: brightness(1.1);
+        }
+        .node-label {
+            font-weight: 500;
+            padding: 4px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            word-wrap: break-word;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        #tooltip {
+            position: absolute;
+            visibility: hidden;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            font-size: 0.875rem;
+            max-width: 300px;
+            z-index: 10;
+        }
+        #tooltip strong {
+            color: #a7f3d0;
+        }
+        #filter-controls {
+            display: none; /* Hidden by default, shown after data loads */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">UniQorn</h1>
+            <p class="text-gray-600 mt-2">Visualizing the world's top startups by valuation.</p>
+        </div>
+
+        <!-- Filter Controls Section -->
+        <div id="filter-controls" class="max-w-xl mx-auto bg-white p-6 rounded-lg shadow-md mb-8">
+             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                    <label for="country-select" class="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                    <select id="country-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select>
+                </div>
+                <div>
+                    <label for="city-select" class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <select id="city-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select>
+                </div>
+             </div>
+        </div>
+
+        <!-- Treemap Visualization Container -->
+        <div id="treemap-container" class="bg-white p-4 rounded-lg shadow-lg">
+             <div id="treemap">
+                <div id="placeholder" class="h-full w-full flex items-center justify-center text-gray-500">
+                    Loading unicorn data from unicorns.csv...
+                </div>
+             </div>
+        </div>
+
+        <!-- Tooltip Element -->
+        <div id="tooltip"></div>
+
+    </div>
+
+    <script>
+        let fullData = []; 
+        const countrySelect = document.getElementById('country-select');
+        const citySelect = document.getElementById('city-select');
+        const tooltip = d3.select("#tooltip");
+
+        // --- START OF NEW DATA LOADING LOGIC ---
+        async function loadData() {
+            try {
+                // Fetch data from a local CSV file named 'unicorns.csv'
+                const parsedData = await d3.csv("unicorns.csv");
+                
+                parsedData.forEach(d => {
+                    const valuationStr = d['Valuation ($B)'];
+                    d.valuationNumeric = valuationStr ? parseFloat(valuationStr.replace(/[^0-9.]/g, '')) : NaN;
+                });
+                
+                fullData = parsedData.filter(d => d['Company'] && !isNaN(d.valuationNumeric));
+
+                if (fullData.length > 0) {
+                    document.getElementById('filter-controls').style.display = 'block';
+                    populateCountryFilter(fullData);
+                    populateCityFilter(fullData);
+                    updateVisualization(); // Initial render
+                } else {
+                   d3.select("#treemap").html('<div class="h-full w-full flex items-center justify-center text-red-500">No valid data found in unicorns.csv. Please check the file content.</div>');
+                }
+            } catch (error) {
+                console.error("Error loading or parsing CSV:", error);
+                d3.select("#treemap").html('<div class="h-full w-full flex items-center justify-center text-red-500"><strong>Error:</strong> Could not load data from unicorns.csv. Please ensure the file exists in the same folder as this HTML file.</div>');
+            }
+        }
+        
+        // Load data when the page is ready
+        document.addEventListener('DOMContentLoaded', loadData);
+        // --- END OF NEW DATA LOADING LOGIC ---
+
+        function populateCountryFilter(data) {
+            const countries = ['All Countries', ...new Set(data.map(d => d.Country).filter(c => c).sort())];
+            countrySelect.innerHTML = countries.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+        
+        function populateCityFilter(data) {
+            const cities = ['All Cities', ...new Set(data.map(d => d.City).filter(c => c).sort())];
+            citySelect.innerHTML = cities.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        function handleCountryChange() {
+            const selectedCountry = countrySelect.value;
+            let dataForCities = (selectedCountry === 'All Countries') ? fullData : fullData.filter(d => d.Country === selectedCountry);
+            populateCityFilter(dataForCities);
+            updateVisualization();
+        }
+
+        function updateVisualization() {
+            let filteredData = fullData;
+            const selectedCountry = countrySelect.value;
+            const selectedCity = citySelect.value;
+
+            if (selectedCountry && selectedCountry !== 'All Countries') {
+                filteredData = filteredData.filter(d => d.Country === selectedCountry);
+            }
+
+            if (selectedCity && selectedCity !== 'All Cities') {
+                filteredData = filteredData.filter(d => d.City === selectedCity);
+            }
+            renderTreemap(filteredData);
+        }
+
+        countrySelect.addEventListener('change', handleCountryChange);
+        citySelect.addEventListener('change', updateVisualization);
+        window.addEventListener('resize', () => {
+            if (fullData.length > 0) updateVisualization();
+        });
+
+        function renderTreemap(data) {
+            const treemapContainer = d3.select("#treemap");
+            treemapContainer.html("");
+            
+            if (data.length === 0) {
+                treemapContainer.html('<div class="h-full w-full flex items-center justify-center text-gray-500">No companies found for the selected filters.</div>');
+                return;
+            }
+            
+            const industryColorMap = {
+                'Enterprise Tech': '#3b82f6',
+                'Industrials': '#6b7280',
+                'Financial Services': '#1e3a8a',
+                'Consumer & Retail': '#facc15',
+                'Media & Entertainment': '#ef4444',
+                'Healthcare & Life Sciences': '#22c55e'
+            };
+            const defaultColor = '#9ca3af';
+
+            const width = treemapContainer.node().getBoundingClientRect().width;
+            const height = treemapContainer.node().getBoundingClientRect().height;
+
+            const root = d3.hierarchy({ children: data })
+                .sum(d => d.valuationNumeric) 
+                .sort((a, b) => b.value - a.value);
+
+            const treemapLayout = d3.treemap().size([width, height]).padding(2);
+            treemapLayout(root);
+
+            const nodes = treemapContainer.selectAll('div.node')
+                .data(root.leaves())
+                .enter()
+                .append('div')
+                .attr('class', 'node')
+                .style('left', d => `${d.x0}px`)
+                .style('top', d => `${d.y0}px`)
+                .style('width', d => `${d.x1 - d.x0}px`)
+                .style('height', d => `${d.y1 - d.y0}px`)
+                .style('background-color', d => industryColorMap[d.data.Industry] || defaultColor);
+
+            nodes.append('div')
+                .attr('class', 'node-label')
+                .text(d => d.data.Company)
+                .style('color', d => d.data.Industry === 'Consumer & Retail' ? '#1f2937' : 'white')
+                .style('text-shadow', d => d.data.Industry === 'Consumer & Retail' ? 'none' : '1px 1px 2px rgba(0,0,0,0.5)')
+                .style('font-size', d => {
+                    const area = (d.x1 - d.x0) * (d.y1 - d.y0);
+                    const scale = d3.scaleSqrt().domain([0, width*height]).range([8, 40]);
+                    const fontSize = Math.min((d.x1-d.x0)/5, (d.y1-d.y0)/2, scale(area)/2.5);
+                    return `${Math.max(8, fontSize)}px`;
+                });
+                
+            nodes.on('mouseover', (event, d) => {
+                    tooltip.style("visibility", "visible")
+                           .html(`
+                               <strong>${d.data.Company}</strong><br>
+                               Valuation: $${d.data.valuationNumeric}B<br>
+                               Industry: ${d.data.Industry || 'N/A'}<br>
+                               Date Joined: ${d.data['Date Joined'] || 'N/A'}<br>
+                               City: ${d.data.City || 'N/A'}<br>
+                               Country: ${d.data.Country || 'N/A'}<br>
+                               Investors: ${d.data['Select Investors'] || 'N/A'}
+                           `);
+                })
+                .on('mousemove', (event) => {
+                    tooltip.style("top", (event.pageY + 15) + "px")
+                           .style("left", (event.pageX + 15) + "px");
+                })
+                .on('mouseout', () => {
+                    tooltip.style("visibility", "hidden");
+                });
+        }
+    </script>
+</body>
+</html>
