@@ -70,7 +70,7 @@
         #tooltip strong {
             color: #6ee7b7; /* Lighter green for dark mode */
         }
-        #filter-controls {
+        #filter-controls, #legend-container {
             display: none; /* Hidden by default, shown after data loads */
         }
     </style>
@@ -79,7 +79,11 @@
 
     <div class="container mx-auto p-4 md:p-8">
         <div class="text-center mb-8">
-            <h1 class="font-poppins text-4xl md:text-5xl font-bold text-white">UniQorn</h1>
+            <!-- START OF TITLE CHANGE -->
+            <h1 class="font-poppins text-4xl md:text-5xl font-bold">
+                <span style="color: #a7c7e7;">U</span><span style="color: #bdecd6;">n</span><span style="color: #b19cd9;">i</span><span style="color: #fffaa0;">Q</span><span style="color: #ffb6b6;">o</span><span style="color: #c1c1c1;">r</span><span style="color: #a7c7e7;">n</span>
+            </h1>
+            <!-- END OF TITLE CHANGE -->
             <p class="font-poppins text-gray-300 mt-2">Querying the world's top startups</p>
         </div>
 
@@ -106,6 +110,14 @@
              </div>
         </div>
 
+        <!-- START OF LEGEND SECTION -->
+        <div id="legend-container" class="mt-6">
+            <div id="legend" class="flex flex-wrap justify-center items-center gap-x-6 gap-y-3">
+                <!-- Legend items will be dynamically inserted here -->
+            </div>
+        </div>
+        <!-- END OF LEGEND SECTION -->
+
         <!-- Tooltip Element -->
         <div id="tooltip"></div>
 
@@ -116,6 +128,19 @@
         const countrySelect = document.getElementById('country-select');
         const citySelect = document.getElementById('city-select');
         const tooltip = d3.select("#tooltip");
+
+        // START: GLOBAL COLOR MAP
+        const industryColorMap = {
+            'Enterprise Tech': '#a7c7e7',         // Pastel Blue
+            'Healthcare & Life Sciences': '#bdecd6', // Pastel Green
+            'Financial Services': '#b19cd9',      // Pastel Purple
+            'Consumer & Retail': '#fffaa0',       // Pastel Yellow
+            'Media & Entertainment': '#ffb6b6',    // Pastel Red
+            'Industrials': '#c1c1c1',             // Pastel Gray
+        };
+        const defaultColor = '#e4e4e7'; // Light gray for others
+        // END: GLOBAL COLOR MAP
+
 
         async function loadData() {
             try {
@@ -130,8 +155,10 @@
 
                 if (fullData.length > 0) {
                     document.getElementById('filter-controls').style.display = 'block';
+                    document.getElementById('legend-container').style.display = 'block'; // Show legend
                     populateCountryFilter(fullData);
                     populateCityFilter(fullData);
+                    populateLegend(); // Create legend
                     updateVisualization();
                 } else {
                    d3.select("#treemap").html('<div class="h-full w-full flex items-center justify-center text-red-500">No valid data found in unicorns.csv. Please check the file content.</div>');
@@ -143,6 +170,23 @@
         }
         
         document.addEventListener('DOMContentLoaded', loadData);
+
+        // START: NEW LEGEND FUNCTION
+        function populateLegend() {
+            const legend = d3.select("#legend");
+            legend.html(""); // Clear previous legend
+            
+            Object.entries(industryColorMap).forEach(([industry, color]) => {
+                const legendItem = legend.append("div").attr("class", "flex items-center");
+                legendItem.append("div").attr("class", "w-4 h-4 rounded-sm mr-2 border border-gray-400").style("background-color", color);
+                legendItem.append("span").attr("class", "text-sm text-gray-400").text(industry);
+            });
+
+            const otherItem = legend.append("div").attr("class", "flex items-center");
+            otherItem.append("div").attr("class", "w-4 h-4 rounded-sm mr-2 border border-gray-400").style("background-color", defaultColor);
+            otherItem.append("span").attr("class", "text-sm text-gray-400").text("Other");
+        }
+        // END: NEW LEGEND FUNCTION
 
         function populateCountryFilter(data) {
             const countries = ['All Countries', ...new Set(data.map(d => d.Country).filter(c => c).sort())];
@@ -190,18 +234,6 @@
                 treemapContainer.html('<div class="h-full w-full flex items-center justify-center text-gray-500">No companies found for the selected filters.</div>');
                 return;
             }
-            
-            // --- START OF COLOR UPDATE ---
-            const industryColorMap = {
-                'Enterprise Tech': '#a7c7e7',         // Pastel Blue
-                'Industrials': '#c1c1c1',             // Pastel Gray
-                'Financial Services': '#b19cd9',      // Pastel Purple
-                'Consumer & Retail': '#fffaa0',       // Pastel Yellow
-                'Media & Entertainment': '#ffb6b6',    // Pastel Red
-                'Healthcare & Life Sciences': '#bdecd6' // Pastel Green
-            };
-            const defaultColor = '#e4e4e7'; // Light gray for others
-            // --- END OF COLOR UPDATE ---
 
             const width = treemapContainer.node().getBoundingClientRect().width;
             const height = treemapContainer.node().getBoundingClientRect().height;
@@ -227,11 +259,8 @@
             nodes.append('div')
                 .attr('class', 'node-label')
                 .text(d => d.data.Company)
-                // --- START OF TEXT COLOR UPDATE ---
-                // Set text to dark gray for readability on light pastel backgrounds
                 .style('color', '#374151') 
                 .style('text-shadow', 'none')
-                // --- END OF TEXT COLOR UPDATE ---
                 .style('font-size', d => {
                     const area = (d.x1 - d.x0) * (d.y1 - d.y0);
                     const scale = d3.scaleSqrt().domain([0, width*height]).range([8, 40]);
