@@ -30,10 +30,12 @@
             align-items: center;
             justify-content: center;
             text-align: center;
-            transition: background-color 0.3s ease;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer; /* Make it look clickable */
         }
         .node:hover {
             filter: brightness(1.1);
+            transform: scale(1.02); /* Add a slight zoom effect */
         }
         .node-label {
             font-weight: 500;
@@ -108,10 +110,8 @@
         const citySelect = document.getElementById('city-select');
         const tooltip = d3.select("#tooltip");
 
-        // --- START OF NEW DATA LOADING LOGIC ---
         async function loadData() {
             try {
-                // Fetch data from a local CSV file named 'unicorns.csv'
                 const parsedData = await d3.csv("unicorns.csv");
                 
                 parsedData.forEach(d => {
@@ -125,7 +125,7 @@
                     document.getElementById('filter-controls').style.display = 'block';
                     populateCountryFilter(fullData);
                     populateCityFilter(fullData);
-                    updateVisualization(); // Initial render
+                    updateVisualization();
                 } else {
                    d3.select("#treemap").html('<div class="h-full w-full flex items-center justify-center text-red-500">No valid data found in unicorns.csv. Please check the file content.</div>');
                 }
@@ -135,9 +135,7 @@
             }
         }
         
-        // Load data when the page is ready
         document.addEventListener('DOMContentLoaded', loadData);
-        // --- END OF NEW DATA LOADING LOGIC ---
 
         function populateCountryFilter(data) {
             const countries = ['All Countries', ...new Set(data.map(d => d.Country).filter(c => c).sort())];
@@ -228,8 +226,16 @@
                     const fontSize = Math.min((d.x1-d.x0)/5, (d.y1-d.y0)/2, scale(area)/2.5);
                     return `${Math.max(8, fontSize)}px`;
                 });
-                
-            nodes.on('mouseover', (event, d) => {
+            
+            // --- START OF CLICK/HOVER EVENT HANDLING ---
+            nodes.on('click', (event, d) => {
+                    // Create a URL-friendly name. This is a best-effort guess.
+                    const companyName = d.data.Company;
+                    const urlFriendlyName = companyName.toLowerCase().replace(/\s+/g, '').replace(/[&,.'"]/g, '');
+                    const url = `https://www.${urlFriendlyName}.com`;
+                    window.open(url, '_blank');
+                })
+                .on('mouseover', (event, d) => {
                     tooltip.style("visibility", "visible")
                            .html(`
                                <strong>${d.data.Company}</strong><br>
@@ -238,7 +244,9 @@
                                Date Joined: ${d.data['Date Joined'] || 'N/A'}<br>
                                City: ${d.data.City || 'N/A'}<br>
                                Country: ${d.data.Country || 'N/A'}<br>
-                               Investors: ${d.data['Select Investors'] || 'N/A'}
+                               Investors: ${d.data['Select Investors'] || 'N/A'}<br>
+                               <hr style="border-color: #4b5563; margin: 4px 0;">
+                               <em style="font-size: 0.75rem; color: #d1d5db;">Click to visit website (best guess)</em>
                            `);
                 })
                 .on('mousemove', (event) => {
@@ -248,6 +256,7 @@
                 .on('mouseout', () => {
                     tooltip.style("visibility", "hidden");
                 });
+            // --- END OF CLICK/HOVER EVENT HANDLING ---
         }
     </script>
 </body>
