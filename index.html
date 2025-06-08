@@ -82,17 +82,19 @@
             <h1 class="font-poppins text-4xl md:text-5xl font-bold">
                 <span style="color: #a7c7e7;">U</span><span style="color: #bdecd6;">n</span><span style="color: #b19cd9;">i</span><span style="color: #fffaa0;">Q</span><span style="color: #ffb6b6;">o</span><span style="color: #c1c1c1;">r</span><span style="color: #a7c7e7;">n</span>
             </h1>
-            <!-- START OF TAGLINE CHANGE -->
             <p class="font-poppins text-gray-300 mt-2">
                 <span style="color: #a7c7e7;">Querying</span> <span style="color: #bdecd6;">the</span> <span style="color: #b19cd9;">world's</span> <span style="color: #fffaa0;">Unicorn</span> <span style="color: #ffb6b6;">startups</span>
             </p>
-            <!-- END OF TAGLINE CHANGE -->
         </div>
 
         <!-- Filter Controls Section -->
-        <!-- START OF FILTER CONTAINER COLOR CHANGE -->
         <div id="filter-controls" class="max-w-xl mx-auto p-6 rounded-lg shadow-2xl mb-8" style="background-color: #ffb6b6;">
-             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+             <!-- START OF GRID CHANGE -->
+             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div>
+                    <label for="continent-select" class="block text-sm font-medium text-gray-700 mb-1">Continent</label>
+                    <select id="continent-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select>
+                </div>
                 <div>
                     <label for="country-select" class="block text-sm font-medium text-gray-700 mb-1">Country</label>
                     <select id="country-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select>
@@ -102,8 +104,8 @@
                     <select id="city-select" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"></select>
                 </div>
              </div>
+             <!-- END OF GRID CHANGE -->
         </div>
-        <!-- END OF FILTER CONTAINER COLOR CHANGE -->
 
 
         <!-- Treemap Visualization Container -->
@@ -115,13 +117,11 @@
              </div>
         </div>
 
-        <!-- START OF LEGEND SECTION -->
+        <!-- LEGEND SECTION -->
         <div id="legend-container" class="mt-6">
             <div id="legend" class="flex flex-wrap justify-center items-center gap-x-6 gap-y-3">
-                <!-- Legend items will be dynamically inserted here -->
             </div>
         </div>
-        <!-- END OF LEGEND SECTION -->
 
         <!-- Tooltip Element -->
         <div id="tooltip"></div>
@@ -130,23 +130,25 @@
 
     <script>
         let fullData = []; 
+        const continentSelect = document.getElementById('continent-select');
         const countrySelect = document.getElementById('country-select');
         const citySelect = document.getElementById('city-select');
         const tooltip = d3.select("#tooltip");
 
         const industryColorMap = {
-            'Enterprise Tech': '#a7c7e7',         // Pastel Blue
-            'Healthcare & Life Sciences': '#bdecd6', // Pastel Green
-            'Financial Services': '#b19cd9',      // Pastel Purple
-            'Consumer & Retail': '#fffaa0',       // Pastel Yellow
-            'Media & Entertainment': '#ffb6b6',    // Pastel Red
-            'Industrials': '#c1c1c1',             // Pastel Gray
+            'Enterprise Tech': '#a7c7e7',
+            'Healthcare & Life Sciences': '#bdecd6',
+            'Financial Services': '#b19cd9',
+            'Consumer & Retail': '#fffaa0',
+            'Media & Entertainment': '#ffb6b6',
+            'Industrials': '#c1c1c1',
         };
-        const defaultColor = '#e4e4e7'; // Light gray for others
+        const defaultColor = '#e4e4e7';
 
 
         async function loadData() {
             try {
+                // The CSV must now have a "Continent" column
                 const parsedData = await d3.csv("unicorns.csv");
                 
                 parsedData.forEach(d => {
@@ -154,21 +156,20 @@
                     d.valuationNumeric = valuationStr ? parseFloat(valuationStr.replace(/[^0-9.]/g, '')) : NaN;
                 });
                 
-                fullData = parsedData.filter(d => d['Company'] && !isNaN(d.valuationNumeric));
+                fullData = parsedData.filter(d => d['Company'] && d['Continent'] && !isNaN(d.valuationNumeric));
 
                 if (fullData.length > 0) {
                     document.getElementById('filter-controls').style.display = 'block';
-                    document.getElementById('legend-container').style.display = 'block'; // Show legend
-                    populateCountryFilter(fullData);
-                    populateCityFilter(fullData);
-                    populateLegend(); // Create legend
-                    updateVisualization();
+                    document.getElementById('legend-container').style.display = 'block';
+                    populateLegend();
+                    populateContinentFilter(fullData);
+                    handleContinentChange(); // Initial population of dependent filters
                 } else {
-                   d3.select("#treemap").html('<div class="h-full w-full flex items-center justify-center text-red-500">No valid data found in unicorns.csv. Please check the file content.</div>');
+                   d3.select("#treemap").html('<div class="h-full w-full flex items-center justify-center text-red-500">No valid data with a Continent found in unicorns.csv. Please check the file content.</div>');
                 }
             } catch (error) {
                 console.error("Error loading or parsing CSV:", error);
-                d3.select("#treemap").html('<div class="h-full w-full flex items-center justify-center text-red-500"><strong>Error:</strong> Could not load data from unicorns.csv. Please ensure the file exists in the same folder as this HTML file.</div>');
+                d3.select("#treemap").html('<div class="h-full w-full flex items-center justify-center text-red-500"><strong>Error:</strong> Could not load data from unicorns.csv. Please ensure the file exists and has a Continent column.</div>');
             }
         }
         
@@ -176,56 +177,80 @@
 
         function populateLegend() {
             const legend = d3.select("#legend");
-            legend.html(""); // Clear previous legend
-            
+            legend.html("");
             Object.entries(industryColorMap).forEach(([industry, color]) => {
                 const legendItem = legend.append("div").attr("class", "flex items-center");
                 legendItem.append("div").attr("class", "w-4 h-4 rounded-sm mr-2 border border-gray-400").style("background-color", color);
                 legendItem.append("span").attr("class", "text-sm text-gray-400").text(industry);
             });
-
             const otherItem = legend.append("div").attr("class", "flex items-center");
             otherItem.append("div").attr("class", "w-4 h-4 rounded-sm mr-2 border border-gray-400").style("background-color", defaultColor);
             otherItem.append("span").attr("class", "text-sm text-gray-400").text("Other");
         }
 
+        // --- START OF REFACTORED FILTER LOGIC ---
+        function populateContinentFilter(data) {
+            const continents = ['All Continents', ...new Set(data.map(d => d.Continent).filter(Boolean).sort())];
+            continentSelect.innerHTML = continents.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
         function populateCountryFilter(data) {
-            const countries = ['All Countries', ...new Set(data.map(d => d.Country).filter(c => c).sort())];
+            const countries = ['All Countries', ...new Set(data.map(d => d.Country).filter(Boolean).sort())];
             countrySelect.innerHTML = countries.map(c => `<option value="${c}">${c}</option>`).join('');
         }
         
         function populateCityFilter(data) {
-            const cities = ['All Cities', ...new Set(data.map(d => d.City).filter(c => c).sort())];
+            const cities = ['All Cities', ...new Set(data.map(d => d.City).filter(Boolean).sort())];
             citySelect.innerHTML = cities.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
+        function handleContinentChange() {
+            const selectedContinent = continentSelect.value;
+            const countryData = selectedContinent === 'All Continents' ? fullData : fullData.filter(d => d.Continent === selectedContinent);
+            populateCountryFilter(countryData);
+            handleCountryChange(); // Cascade to update city and treemap
+        }
+
         function handleCountryChange() {
+            const selectedContinent = continentSelect.value;
             const selectedCountry = countrySelect.value;
-            let dataForCities = (selectedCountry === 'All Countries') ? fullData : fullData.filter(d => d.Country === selectedCountry);
-            populateCityFilter(dataForCities);
+
+            let cityData = fullData;
+            if (selectedContinent !== 'All Continents') {
+                cityData = cityData.filter(d => d.Continent === selectedContinent);
+            }
+            if (selectedCountry !== 'All Countries') {
+                cityData = cityData.filter(d => d.Country === selectedCountry);
+            }
+            populateCityFilter(cityData);
             updateVisualization();
         }
 
         function updateVisualization() {
             let filteredData = fullData;
+            const selectedContinent = continentSelect.value;
             const selectedCountry = countrySelect.value;
             const selectedCity = citySelect.value;
 
-            if (selectedCountry && selectedCountry !== 'All Countries') {
+            if (selectedContinent !== 'All Continents') {
+                filteredData = filteredData.filter(d => d.Continent === selectedContinent);
+            }
+            if (selectedCountry !== 'All Countries') {
                 filteredData = filteredData.filter(d => d.Country === selectedCountry);
             }
-
-            if (selectedCity && selectedCity !== 'All Cities') {
+            if (selectedCity !== 'All Cities') {
                 filteredData = filteredData.filter(d => d.City === selectedCity);
             }
             renderTreemap(filteredData);
         }
 
+        continentSelect.addEventListener('change', handleContinentChange);
         countrySelect.addEventListener('change', handleCountryChange);
         citySelect.addEventListener('change', updateVisualization);
         window.addEventListener('resize', () => {
             if (fullData.length > 0) updateVisualization();
         });
+        // --- END OF REFACTORED FILTER LOGIC ---
 
         function renderTreemap(data) {
             const treemapContainer = d3.select("#treemap");
