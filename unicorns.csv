@@ -490,7 +490,7 @@ Iterable,$2,6/15/2021,North America,United States,San Francisco,Enterprise Tech,
 Astronergy,$1.82,7/25/2023,Asia,China,Haining,Industrials,
 Bunq,$1.80,6/18/2021,Europe,Netherlands,Amsterdam,Financial Services,Undisclosed
 Neko Health,$1.80,1/23/2025,Europe,Sweden,Stockholm,Healthcare & Life Sciences,"Lightspeed Venture Partners, General Catalyst"
-Quest Global,$1.80,8/8/2023,#N/A,,Singapore,Industrials,
+Quest Global,$1.80,8/8/2023,Asia,Singapore,Singapore,Industrials,
 Clip,$2,6/10/2021,North America,Mexico,Mexico City,Financial Services,"Alta Ventures Mexico, General Atlantic, SoftBank Group"
 Loggi,$2,6/5/2019,South America,Brazil,Sao Paulo,Industrials,"Qualcomm Ventures, SoftBank Group. Monashees+"
 MURAL,$2,7/20/2021,North America,United States,San Francisco,Enterprise Tech,"Insight Partners, Tiger Global Management, Gradient Ventures"
@@ -561,7 +561,7 @@ Spinny,$1.80,11/24/2021,Asia,India,Gurugram,Industrials,"General Catalyst, Eleat
 Orca Security,$1.80,3/23/2021,North America,United States,Portland,Enterprise Tech,"YL Ventures, Redpoint Ventures, GGV Capital"
 Apus Group,$1.73,1/16/2015,Asia,China,Beijing,Consumer & Retail,"Redpoint Ventures, QiMing Venture Partners, Chengwei Capital"
 Razor,$1.70,11/8/2021,Europe,Germany,Berlin,Consumer & Retail,"Global Founders Capital, 468 Capital, Redalpine Venture Partners"
-Micro Connect,$1.70,8/2/2023,#N/A,,Hong Kong,Financial Services,"HongShan, Horizons Ventures, Lenovo Capital and Incubator Group"
+Micro Connect,$1.70,8/2/2023,Asia,Hong Kong,Hong Kong,Financial Services,"HongShan, Horizons Ventures, Lenovo Capital and Incubator Group"
 DailyPay,$1.70,5/18/2021,North America,United States,New York,Financial Services,"RPM Ventures, Inspiration Ventures, Carrick Capital Partners"
 Udaan,$1.80,9/4/2018,Asia,India,Bengaluru,Consumer & Retail,"DST Global, Lightspeed Venture Partners, Microsoft ScaleUp"
 Harry's,$1.70,2/16/2018,North America,United States,New York,Consumer & Retail,"Thrive Capital, Tiger Global Management, Temasek"
@@ -856,7 +856,7 @@ MindTickle,$1.20,8/3/2021,North America,United States,San Francisco,Enterprise T
 Offchain Labs,$1.20,8/31/2021,North America,United States,Princeton,Enterprise Tech,"Pantera Capital, Polychain Capital, Lightspeed Venture Partners"
 Copado,$1.20,9/13/2021,North America,United States,Chicago,Enterprise Tech,"Insight Partners, Salesforce Ventures, Perpetual Investors"
 Gem,$1.20,9/28/2021,North America,United States,San Francisco,Enterprise Tech,"Accel, Greylock Partners, Meritech Capital Partners"
-EGYM,$1.20,9/24/2024,#N/A,EGYM,Munich,Healthcare & Life Sciences,"Bayern Kapital, NGP Capital, High-Tech Grunderfonds"
+EGYM,$1.20,9/24/2024,Europe,Germany,Munich,Healthcare & Life Sciences,"Bayern Kapital, NGP Capital, High-Tech Grunderfonds"
 CarDekho,$1.20,10/13/2021,Asia,India,Jaipur,Industrials,"Sequoia Capital India, Hillhouse Capital Management, Sunley House Capital Management"
 The Good Glamm Group,$1.20,11/10/2021,Asia,India,Mumbai,Consumer & Retail,"L'Occitane, Trifecta Capital, Bessemer Venture Partners"
 AgentSync,$1.20,12/7/2021,North America,United States,Denver,Insurance,"Craft Ventures, Caffeinated Capital, Operator Collective"
