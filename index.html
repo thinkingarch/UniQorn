@@ -67,11 +67,9 @@
             z-index: 10;
             border: 1px solid #4b5563;
         }
-        /* START OF CHANGE */
         #tooltip strong {
             color: #fffaa0; /* Pastel Yellow */
         }
-        /* END OF CHANGE */
         #filter-controls, #legend-container {
             display: none; /* Hidden by default, shown after data loads */
         }
@@ -134,6 +132,7 @@
         const countrySelect = document.getElementById('country-select');
         const citySelect = document.getElementById('city-select');
         const tooltip = d3.select("#tooltip");
+        let activeNodeData = null; // To track the data of the currently displayed tooltip
 
         const industryColorMap = {
             'Enterprise Tech': '#a7c7e7',
@@ -188,7 +187,6 @@
             otherItem.append("span").attr("class", "text-sm text-gray-400").text("Other");
         }
 
-        // --- START OF REFACTORED FILTER LOGIC ---
         function populateContinentFilter(data) {
             const continents = ['All Continents', ...new Set(data.map(d => d.Continent).filter(Boolean).sort())];
             continentSelect.innerHTML = continents.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -250,7 +248,6 @@
         window.addEventListener('resize', () => {
             if (fullData.length > 0) updateVisualization();
         });
-        // --- END OF REFACTORED FILTER LOGIC ---
 
         function renderTreemap(data) {
             const treemapContainer = d3.select("#treemap");
@@ -294,29 +291,38 @@
                     return `${Math.max(8, fontSize)}px`;
                 });
             
+            // --- START OF EVENT HANDLING CHANGE ---
             treemapContainer.on('click', () => {
                 tooltip.style("visibility", "hidden");
+                activeNodeData = null; // Clear active node data
             });
             
             nodes
                 .on('click', (event, d) => {
                     event.stopPropagation();
-                    
-                    tooltip.style("visibility", "visible")
-                           .html(`
-                               <strong>${d.data.Company}</strong><br>
-                               Valuation: $${d.data.valuationNumeric}B<br>
-                               Industry: ${d.data.Industry || 'N/A'}<br>
-                               Date Joined: ${d.data['Date Joined'] || 'N/A'}<br>
-                               City: ${d.data.City || 'N/A'}<br>
-                               Country: ${d.data.Country || 'N/A'}<br>
-                               Investors: ${d.data['Select Investors'] || 'N/A'}<br>
-                               <hr style="border-color: #4b5563; margin: 4px 0;">
-                               <div style="font-size: 0.75rem; color: #d1d5db;">Double-click to visit website</div>
-                           `);
-                           
-                    tooltip.style("top", (event.pageY + 15) + "px")
-                           .style("left", (event.pageX + 15) + "px");
+
+                    // If the tooltip is already visible for the clicked node, hide it.
+                    if (tooltip.style("visibility") === "visible" && activeNodeData === d) {
+                        tooltip.style("visibility", "hidden");
+                        activeNodeData = null;
+                    } else { // Otherwise, show/update the tooltip for the new node.
+                        activeNodeData = d;
+                        tooltip.style("visibility", "visible")
+                               .html(`
+                                   <strong>${d.data.Company}</strong><br>
+                                   Valuation: $${d.data.valuationNumeric}B<br>
+                                   Industry: ${d.data.Industry || 'N/A'}<br>
+                                   Date Joined: ${d.data['Date Joined'] || 'N/A'}<br>
+                                   City: ${d.data.City || 'N/A'}<br>
+                                   Country: ${d.data.Country || 'N/A'}<br>
+                                   Investors: ${d.data['Select Investors'] || 'N/A'}<br>
+                                   <hr style="border-color: #4b5563; margin: 4px 0;">
+                                   <div style="font-size: 0.75rem; color: #d1d5db;">Double-click to visit website</div>
+                               `);
+                               
+                        tooltip.style("top", (event.pageY + 15) + "px")
+                               .style("left", (event.pageX + 15) + "px");
+                    }
                 })
                 .on('dblclick', (event, d) => {
                     const companyName = d.data.Company;
@@ -324,6 +330,7 @@
                     const url = `https://www.${urlFriendlyName}.com`;
                     window.open(url, '_blank');
                 });
+            // --- END OF EVENT HANDLING CHANGE ---
         }
     </script>
 </body>
